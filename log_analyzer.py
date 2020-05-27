@@ -52,9 +52,19 @@ class NginxLogManager:
         return logs[-1]
 
 
+class NginxLogParser:
+    def __init__(self, filename):
+        self.filename = filename
+
+    def parse(self):
+        return self.filename
+
+
 def main():
     report_dir = config.get('REPORT_DIR')
     last_log = NginxLogManager(config.get('LOG_DIR')).get_last_log()
+    if last_log:
+        log_data = NginxLogParser(last_log['filename']).parse()
 
 
 if __name__ == "__main__":
