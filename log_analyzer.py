@@ -41,11 +41,8 @@ class NginxLogManager:
             if date:
                 yield {'filename': filename, 'date': date}
 
-    def sort_logs(self, key=lambda log: log['date']):
-        return sorted(self.scan_logs(), key=key)
-
     def get_last_log(self):
-        logs = self.sort_logs()
+        logs = sorted(self.scan_logs(), key=lambda log: log['date'])
         if not logs:
             return
 
