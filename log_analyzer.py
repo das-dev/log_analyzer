@@ -27,13 +27,14 @@ HTTP_X_FORWARDED_FOR = r'\"((?P<http_x_forwarded_for>.*?)|-)\"'
 HTTP_X_REQUEST_ID = r'\"((?P<http_x_request_id>.*?)|-)\"'
 HTTP_X_RB_USER = r'\"((?P<http_x_rb_user>\w*?)|-)\"'
 REQUEST_TIME = r'((?P<request_time>\d*\.\d{3})|-)'
-LOG_VARS = [REMOTE_ADDR, REMOTE_USER, HTTP_X_REAL_IP, TIME_LOCAL, REQUEST, STATUS, BODY_BYTES_SENT]
-LOG_VARS += [HTTP_REFERER, HTTP_USER_AGENT, HTTP_X_FORWARDED_FOR, HTTP_X_REQUEST_ID, HTTP_X_RB_USER, REQUEST_TIME]
-LOG_RECORD_PATTERN = '{0} {1}  {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}'.format(*LOG_VARS)
+LOG_FORMAT_PATTERN = f'{REMOTE_ADDR} {REMOTE_USER}  {HTTP_X_REAL_IP} {TIME_LOCAL} {REQUEST} ' \
+                     f'{STATUS} {BODY_BYTES_SENT} {HTTP_REFERER} ' \
+                     f'{HTTP_USER_AGENT} {HTTP_X_FORWARDED_FOR} {HTTP_X_REQUEST_ID} {HTTP_X_RB_USER} ' \
+                     f'{REQUEST_TIME}'
 
 
 class NginxLogManager:
-    pattern = r'nginx-access-ui.log-(?P<date>\d*)(.gz)?'
+    pattern = r'\Anginx-access-ui.log-(?P<date>\d*)(?P<ext>.gz)?\Z'
 
     def __init__(self, log_dir):
         self.log_dir = log_dir
@@ -70,7 +71,7 @@ class NginxLogParser:
             return [line.decode('utf8') for line in gz.readlines()]
 
     def _parse_log_record(self, record):
-        return re.match(LOG_RECORD_PATTERN, record).groupdict()
+        return re.match(LOG_FORMAT_PATTERN, record).groupdict()
 
     def parse(self):
         records = self._read_log()
