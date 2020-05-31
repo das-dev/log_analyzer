@@ -4,6 +4,7 @@ import re
 import os
 import gzip
 import json
+import argparse
 
 from string import Template
 from datetime import datetime
@@ -15,6 +16,13 @@ from collections import defaultdict
 #                     '$status $body_bytes_sent "$http_referer" '
 #                     '"$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" '
 #                     '$request_time';
+
+DEFAULT_PATH_TO_CONFIG = '/usr/local/etc/config.json'
+DEFAULT_CONFIG = {
+    "REPORT_SIZE": 1000,
+    "REPORT_DIR": "./reports",
+    "LOG_DIR": "./log"
+}
 
 FILENAME_PATTERN = r'^nginx-access-ui.log-(?P<date>\d*)(?P<ext>.gz)?$'
 IP_ADDR = rf'(?:[\.\dA-Fa-f:]*)'
@@ -128,7 +136,7 @@ class NginxLogParser:
         return record_data
 
 
-class NginxLogAnalyzer:
+class NginxLogStat:
     def __init__(self, log_data, report_size=None):
         self.log_data = log_data
         self.report_size = report_size
@@ -192,20 +200,40 @@ class NginxLogReport:
             fl.write(report)
 
 
-def main():
-    config = {
-        "REPORT_SIZE": 1000,
-        "REPORT_DIR": "./reports",
-        "LOG_DIR": "./log"
-    }
-    last_log = NginxLogManager(config['LOG_DIR']).get_last_log()
-    if not last_log:
-        return
+class Config(dict):
+    def __init__(self, default_config=None):
+        super().__init__()
+        self.update(default_config or {})
 
-    log_data = NginxLogParser(last_log['pathname'], last_log['ext']).parse()
-    log_stat = NginxLogAnalyzer(log_data, config['REPORT_SIZE']).make_stat()
-    NginxLogReport(log_stat, last_log['log_date']).make_report(config['REPORT_DIR'])
+    def merge_external(self, pathname):
+        external = self._parse_external(pathname)
+        self.update(external)
+
+    def _parse_external(self, pathname):
+        with open(pathname) as fl:
+            json_config = fl.read()
+
+        return json.loads(json_config)
+
+
+class NginxLogAnalyzer:
+    def run(self, config_path):
+        config = Config(DEFAULT_CONFIG)
+        if config_path:
+            config.merge_external(config_path)
+
+        last_log = NginxLogManager(config['LOG_DIR']).get_last_log()
+        if not last_log:
+            return
+
+        log_data = NginxLogParser(last_log['pathname'], last_log['ext']).parse()
+        log_stat = NginxLogStat(log_data, config['REPORT_SIZE']).make_stat()
+        NginxLogReport(log_stat, last_log['log_date']).make_report(config['REPORT_DIR'])
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    config_help = f'path to config. Default: {DEFAULT_PATH_TO_CONFIG}'
+    parser.add_argument('--config', type=str, const=DEFAULT_PATH_TO_CONFIG, default=None, nargs='?', help=config_help)
+    args = parser.parse_args()
+    NginxLogAnalyzer().run(args.config)
