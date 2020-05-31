@@ -1,1 +1,2 @@
-/log/nginx-access-ui.log-*.gz
+/log/*
+/reports/*
