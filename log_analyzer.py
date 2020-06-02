@@ -47,7 +47,7 @@ LOG_FORMAT_PATTERN = f'{REMOTE_ADDR} {REMOTE_USER}  {HTTP_X_REAL_IP} {TIME_LOCAL
                      f'{HTTP_USER_AGENT} {HTTP_X_FORWARDED_FOR} {HTTP_X_REQUEST_ID} {HTTP_X_RB_USER} ' \
                      f'{REQUEST_TIME}'
 
-
+print(LOG_FORMAT_PATTERN)
 class NginxLogManager:
     pattern = FILENAME_PATTERN
 
