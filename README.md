@@ -10,17 +10,17 @@ Script for analyzing nginx logs
     git clone https://github.com/das-dev/log_analyzer
     
 ### How to use:
-For run with default config:
+Run with default config:
 
     python3 log_analyzer.py
-For run with custom config:
+Run with custom config:
 
     python3 log_analyzer.py --config conf.json
-For run with default path to custom config:
+Run with default path to custom config:
 
     python3 log_analyzer.py --config
 
-Format for config file: JSON
+Config file format: JSON
 
 ##### Config template:
     
