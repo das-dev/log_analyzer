@@ -19,6 +19,8 @@ from collections import defaultdict
 #                     '"$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" '
 #                     '$request_time';
 
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+TEMPLATE_DIR = os.path.join(DIR_PATH, 'templates')
 DEFAULT_PATH_TO_CONFIG = '/usr/local/etc/config.json'
 DEFAULT_CONFIG = {
     'REPORT_SIZE': 1000,
@@ -95,43 +97,15 @@ class NginxLogParser:
     def __init__(self, pathname, ext=None):
         self.pathname = pathname
         self.ext = ext
-        self.records_count = 0
-        self.parsed_records_count = 0
-
-    def error_threshold_exceeded(self, error_threshold):
-        try:
-            return 1 - self.parsed_records_count / self.records_count > error_threshold
-        except ZeroDivisionError:
-            return False
 
     def parse(self):
-        parsed_records = []
-        records = self._read_log()
-        for record in records:
-            self.records_count += 1
-            record_data = self._parse_log_record(record)
-            if record_data:
-                parsed_records.append(record_data)
-
-        self.parsed_records_count = len(parsed_records)
-        return parsed_records
+        for record in self._read_log():
+            yield self._parse_log_record(record)
 
     def _read_log(self):
-        log_reader = self._read_plain_log
-        if self.ext == '.gz':
-            log_reader = self._read_gzipped_log
-
-        for line in log_reader():
-            yield line
-
-    def _read_plain_log(self):
-        with open(self.pathname) as fl:
-            for line in fl:
-                yield line.rstrip('\n')
-
-    def _read_gzipped_log(self):
-        with gzip.open(self.pathname, 'rb') as gz:
-            for line in gz:
+        open_log = gzip.open if self.ext == '.gz' else open
+        with open_log(self.pathname, 'rb') as log:
+            for line in log:
                 yield line.decode('utf8').rstrip('\n')
 
     def _parse_log_record(self, record):
@@ -151,9 +125,12 @@ class NginxLogStat:
         self.log_data = log_data
         self.total_count = 0
         self.total_request_time = 0
+        self.records_count = 0
+        self.not_parsed_count = 0
+        self.prepared_data = self._prepare_data()
 
     def make_stat(self):
-        for url, stat in self._prepare_data().items():
+        for url, stat in self.prepared_data:
             request_time_per_url = sum(stat['request_time'])
             url_stat = {
                 'url': url,
@@ -165,32 +142,35 @@ class NginxLogStat:
                 'time_max': max(stat['request_time']),
                 'time_med': round(median(sorted(stat['request_time'])), 3)
             }
-            if url == '/api/v2/banner/26647998':
-                print(stat['request_time'])
             yield url_stat
+
+    def error_threshold_exceeded(self, error_threshold):
+        try:
+            return self.not_parsed_count / self.records_count > error_threshold
+        except ZeroDivisionError:
+            return False
 
     def _prepare_data(self):
         urls_stat = defaultdict(lambda: {'count': 0, 'request_time': []})
-        for record in self.log_data:
-            url = record.get('url')
-            if not url:
+        for count, record in enumerate(self.log_data, 1):
+            self.records_count = count
+            not_parsed = not record or 'url' not in record or 'request_time' not in record
+            if not_parsed:
+                self.not_parsed_count += 1
                 continue
 
-            request_time = record.get('request_time')
-            if not request_time:
-                continue
-
-            request_time = float(request_time)
+            url = record['url']
+            request_time = float(record['request_time'])
             self.total_request_time += request_time
             self.total_count += 1
             urls_stat[url]['count'] += 1
             urls_stat[url]['request_time'].append(request_time)
-        return urls_stat
+        return urls_stat.items()
 
 
 class NginxLogReport:
     report_filename_template = 'report-{date}.html'
-    report_date_format = "%Y.%m.%d"
+    report_date_format = '%Y.%m.%d'
 
     def __init__(self, log_stat, log_date):
         self.log_stat = log_stat
@@ -215,7 +195,7 @@ class NginxLogReport:
         return {'table_json': json.dumps(log_stat)}
 
     def _render_report(self, context):
-        with open('templates/report.html') as fl:
+        with open(os.path.join(TEMPLATE_DIR, 'report.html')) as fl:
             template = fl.read()
         return Template(template).safe_substitute(**context)
 
@@ -275,14 +255,14 @@ class LogAnalyzer:
             self.logger.info('The latest log has already been analyzed')
             return
 
-        log_parser = NginxLogParser(latest_log['pathname'], latest_log['ext'])
-        log_data = log_parser.parse()
-        if log_parser.error_threshold_exceeded(self.config['ERROR_THRESHOLD']):
+        log_data = NginxLogParser(latest_log['pathname'], latest_log['ext']).parse()
+        log_stat_maker = NginxLogStat(log_data)
+        if log_stat_maker.error_threshold_exceeded(self.config['ERROR_THRESHOLD']):
             print('Most of the analyzed logs could not be parsed')
             self.logger.error('Most of the analyzed logs could not be parsed')
             return
 
-        log_stat = NginxLogStat(log_data).make_stat()
+        log_stat = log_stat_maker.make_stat()
         report_dir, report_size = self.config['REPORT_DIR'], self.config['REPORT_SIZE']
         NginxLogReport(log_stat, latest_log['log_date']).make_report(report_dir, report_size)
 
