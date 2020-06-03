@@ -13,11 +13,6 @@ from datetime import datetime
 from statistics import median, mean
 from collections import defaultdict
 
-# log_format ui_short '$remote_addr  $remote_user $http_x_real_ip [$time_local] "$request" '
-#                     '$status $body_bytes_sent "$http_referer" '
-#                     '"$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" '
-#                     '$request_time';
-
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR_PATH, 'templates')
 DEFAULT_PATH_TO_CONFIG = '/usr/local/etc/config.json'
@@ -27,6 +22,11 @@ DEFAULT_CONFIG = {
     'LOG_DIR': './log',
     'ERROR_THRESHOLD': .1
 }
+
+# log_format ui_short '$remote_addr  $remote_user $http_x_real_ip [$time_local] "$request" '
+#                     '$status $body_bytes_sent "$http_referer" '
+#                     '"$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" '
+#                     '$request_time';
 
 FILENAME_PATTERN = r'^nginx-access-ui.log-(?P<date>\d+)(?P<ext>.gz)?$'
 IP_ADDR = rf'(?:[\.\dA-Fa-f:]*)'

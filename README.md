@@ -20,6 +20,8 @@ For run with default path to custom config:
 
     python3 log_analyzer.py --config
 
+Format for config file: JSON
+
 ### Running the tests
 
     python3 functional_tests.py
