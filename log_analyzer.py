@@ -13,7 +13,6 @@ from datetime import datetime
 from statistics import median, mean
 from collections import defaultdict
 
-
 # log_format ui_short '$remote_addr  $remote_user $http_x_real_ip [$time_local] "$request" '
 #                     '$status $body_bytes_sent "$http_referer" '
 #                     '"$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" '
@@ -246,8 +245,8 @@ class LogAnalyzer:
     def run(self):
         latest_log = NginxLogManager(self.config['LOG_DIR']).get_latest_log()
         if not latest_log:
-            print('Not found logs for parsing')
-            self.logger.info('Not found logs for parsing')
+            print('Not found logs for analysis')
+            self.logger.info('Not found logs for analysis')
             return
 
         if NginxLogReport.report_exists(self.config['REPORT_DIR'], latest_log['log_date']):
