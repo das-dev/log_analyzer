@@ -22,6 +22,16 @@ For run with default path to custom config:
 
 Format for config file: JSON
 
+Config template:
+    
+    {
+        REPORT_SIZE: <number of urls>,
+        REPORT_DIR: <path>,
+        LOG_DIR: <path>,
+        LOGGING_DIR: <path to logdir for own logs. Default: STDOUT >,
+        ERROR_THRESHOLD: <threshold, e.g. 0.1 >
+    }
+
 ### Running the tests
 
     python3 functional_tests.py
