@@ -19,6 +19,8 @@ from collections import defaultdict
 #                     '"$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" '
 #                     '$request_time';
 
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+TEMPLATE_DIR = os.path.join(DIR_PATH, 'templates')
 DEFAULT_PATH_TO_CONFIG = '/usr/local/etc/config.json'
 DEFAULT_CONFIG = {
     'REPORT_SIZE': 1000,
@@ -47,7 +49,7 @@ LOG_FORMAT_PATTERN = f'{REMOTE_ADDR} {REMOTE_USER}  {HTTP_X_REAL_IP} {TIME_LOCAL
                      f'{HTTP_USER_AGENT} {HTTP_X_FORWARDED_FOR} {HTTP_X_REQUEST_ID} {HTTP_X_RB_USER} ' \
                      f'{REQUEST_TIME}'
 
-print(LOG_FORMAT_PATTERN)
+
 class NginxLogManager:
     pattern = FILENAME_PATTERN
 
@@ -190,7 +192,7 @@ class NginxLogStat:
 
 class NginxLogReport:
     report_filename_template = 'report-{date}.html'
-    report_date_format = "%Y.%m.%d"
+    report_date_format = '%Y.%m.%d'
 
     def __init__(self, log_stat, log_date):
         self.log_stat = log_stat
@@ -215,7 +217,7 @@ class NginxLogReport:
         return {'table_json': json.dumps(log_stat)}
 
     def _render_report(self, context):
-        with open('templates/report.html') as fl:
+        with open(os.path.join(TEMPLATE_DIR, 'report.html')) as fl:
             template = fl.read()
         return Template(template).safe_substitute(**context)
 
