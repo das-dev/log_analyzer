@@ -167,8 +167,6 @@ class NginxLogStat:
                 'time_max': max(stat['request_time']),
                 'time_med': round(median(sorted(stat['request_time'])), 3)
             }
-            if url == '/api/v2/banner/26647998':
-                print(stat['request_time'])
             yield url_stat
 
     def _prepare_data(self):
