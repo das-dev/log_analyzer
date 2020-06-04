@@ -272,7 +272,7 @@ class Command:
         logging.basicConfig(
             format='[%(asctime)s] %(levelname).1s %(message)s',
             datefmt='%Y.%m.%d %H:%M:%S',
-            filename=config.get('LOGGING_DIR'),
+            filename=config.get('LOGGING_FILE'),
             level=logging.INFO
         )
 
