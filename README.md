@@ -22,7 +22,7 @@ Run with default path to custom config:
 
 Config file format: JSON
 
-##### Config template:
+#### Config template:
     
     {
         REPORT_SIZE: <number of urls>,
