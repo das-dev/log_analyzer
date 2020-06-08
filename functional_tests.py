@@ -70,7 +70,7 @@ class LogAnalyzerDefaultConfigTest(unittest.TestCase):
     def test_do_not_make_a_report_without_log_file(self):
         console = subprocess.run(['python3', APP_PATH], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertFalse(os.path.isfile(self.helper.make_report_pathname(TOMORROW)))
-        self.assertEqual(console.stdout, b'Not found logs for analysis\n')
+        self.assertTrue(b'Not found logs for analysis' in console.stderr)
 
     def test_do_not_make_a_report_from_incorrect_logs(self):
         records = self.helper.generate_log_records(self.RECORD_DATA * 8)
@@ -79,7 +79,7 @@ class LogAnalyzerDefaultConfigTest(unittest.TestCase):
         self.helper.make_log_file(records, log_date=TOMORROW, ext='.gz')
         console = subprocess.run(['python3', APP_PATH], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertFalse(os.path.isfile(self.helper.make_report_pathname(TOMORROW)))
-        self.assertEqual(console.stdout, b'Most of the analyzed logs could not be parsed\n')
+        self.assertTrue(b'Most of the analyzed logs could not be parsed' in console.stderr)
 
     def test_make_a_report_for_latest_log(self):
         records = self.helper.generate_log_records(self.RECORD_DATA * 10)
@@ -101,7 +101,7 @@ class LogAnalyzerDefaultConfigTest(unittest.TestCase):
         console = subprocess.run(['python3', APP_PATH], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         with open(pathname) as fl:
             self.assertEqual(fl.read(), self.helper.FAKE_REPORT_CONTENT)
-        self.assertEqual(console.stdout, b'The latest log has already been analyzed\n')
+        self.assertTrue(b'The latest log has already been analyzed' in console.stderr)
 
 
 if __name__ == '__main__':
